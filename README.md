@@ -51,9 +51,10 @@ The envelope digests are this repo's own addition. They do not enter the
    `run-vectors.mjs` prints a PASS or FAIL line per case; in the run above all 94
    printed PASS, including this one.
 3. `python3 -I verifier/verify.py --vectors their-files/tap-http-request-v1.json`
-   (stdlib plus the optional `cryptography` package): recomputes the digests,
-   rebuilds the signature base from the request headers and checks the Ed25519
-   signature with the public key in the vector's listing.
+   (stdlib plus the `cryptography` package): recomputes the digests, rebuilds the
+   signature base from the request headers, checks the Ed25519 signature with the
+   public key in the vector's listing, and compares the manifest's request,
+   signature base, expected decision and key with the named case of the vector file.
 4. `action_ref` was also computed with argentum-core's own implementation
    (`plugins/agt_evidence_anchor/action_ref.py`, `compute_action_ref`), same value.
 
@@ -66,6 +67,21 @@ python3 -I scripts/produce.py              # writes artifacts/manifest.json
 python3 -I verifier/verify.py --vectors their-files/tap-http-request-v1.json
 ```
 
+## What the verifier does and does not guarantee
+
+- Exit code 0 and `ALL CHECKS PASS`: every check ran and passed, including the
+  Ed25519 signature and the comparison with the vector file you downloaded.
+- Exit code 1: a check failed, or the manifest or vector file is malformed.
+- Exit code 2: nothing failed, but something was not assessed (the `cryptography`
+  package is missing, or `--vectors` was not given). The output names it, and it
+  never prints `ALL CHECKS PASS`. In an earlier version (commit `f84780f`) both cases
+  ended in `ALL CHECKS PASS` with exit code 0.
+- `decision.expect.ok` must be exactly the boolean `true`; any other value fails.
+- It does not run Visa CLI's verifier. `decision.their_verifier_full_run` is a
+  string the emitter declared, which this script cannot confirm. The result of the
+  run is in the section above, as I observed it.
+- It does not show the request came from a real Visa CLI agent: it is a test vector.
+
 ## Limits
 
 - The request is a test vector signed with the public RFC 8032 test vector 1 key.
@@ -74,7 +90,8 @@ python3 -I verifier/verify.py --vectors their-files/tap-http-request-v1.json
   when it was created; an anchor would add a timestamp that does not depend on
   this repo.
 - The "decision" is the `expect` field of the vector file plus the result of the
-  full run of Visa CLI's example verifier, not a per-case output of it.
+  full run of Visa CLI's example verifier, not a per-case output of it; the second
+  part is declared, not checked by `verifier/verify.py`.
 - Visa CLI's pages say their example verifier "isn't a verifier Visa publishes".
   Everything here refers to it as Visa CLI's example verifier.
 - See `PROVENANCE.md`.

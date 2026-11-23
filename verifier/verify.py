@@ -10,12 +10,18 @@ prose fields.
 4. The RFC 9421 signature base, rebuilt from the request headers and
    compared with the one the vector file declares.
 5. The Ed25519 signature over that base, with the public key from the
-   vector's listing (needs the `cryptography` package; skipped, and said
-   so, if it is not installed).
-6. Optional: --vectors PATH checks the file's SHA-256 against the one
-   recorded in the manifest.
+   vector's listing (needs the `cryptography` package).
+6. decision.expect.ok must be exactly the boolean true; any other value fails.
+7. With --vectors PATH: the file's SHA-256 equals the recorded one, and the
+   manifest's request, signature_base, decision.expect and public key are
+   byte-for-byte the named case of that file (they are not trusted from the
+   manifest).
 
-Run: python3 -I verifier/verify.py [--vectors their-files/tap-http-request-v1.json]
+Exit codes: 0 every check ran and passed; 1 a check failed; 2 nothing
+failed but at least one check was NOT ASSESSED (no `cryptography` package,
+or no --vectors): the summary says which, and it is never "ALL CHECKS PASS".
+
+Run: python3 -I verifier/verify.py --vectors their-files/tap-http-request-v1.json
 """
 import argparse
 import base64
@@ -44,6 +50,7 @@ def main():
     args = ap.parse_args()
     m = json.load(open(os.path.join(args.artifacts, "manifest.json")))
     ok = True
+    not_assessed = []
 
     def check(label, passed, detail=""):
         nonlocal ok
@@ -56,6 +63,9 @@ def main():
     check("request_digest", sha256_hex(jcs(m["request"])) == env["request_digest"])
     check("signature_base_digest", sha256_hex(m["signature_base"]) == env["signature_base_digest"])
     check("decision_digest", sha256_hex(jcs(m["decision"])) == env["decision_digest"])
+
+    check("decision.expect.ok is exactly true", m["decision"].get("expect", {}).get("ok") is True,
+          repr(m["decision"].get("expect", {}).get("ok")))
 
     req = m["request"]
     hdr = {k.lower(): v for k, v in req["headers"]}
@@ -94,16 +104,43 @@ def main():
         except InvalidSignature:
             check("Ed25519 signature verifies over the rebuilt base", False)
     except ImportError:
-        print("[SKIP] Ed25519 signature: the `cryptography` package is not installed")
+        not_assessed.append("Ed25519 signature: the `cryptography` package is not installed")
+        print("[NOT ASSESSED] Ed25519 signature: the `cryptography` package is not installed")
 
     if args.vectors:
-        got = sha256_hex(open(args.vectors, "rb").read())
+        raw = open(args.vectors, "rb").read()
+        got = sha256_hex(raw)
         check("vector file SHA-256 equals the recorded one", got == m["source_vectors"]["sha256"], got)
+        cases = [c for c in json.loads(raw)["cases"] if c["name"] == m["source_vectors"]["case"]]
+        check("exactly one case with the recorded name in the vector file", len(cases) == 1, str(len(cases)))
+        if len(cases) == 1:
+            c = cases[0]
+            check("manifest.request equals the file's case request", m["request"] == c["request"])
+            check("manifest.signature_base equals the file's case signatureBase", m["signature_base"] == c["signatureBase"])
+            check("manifest.decision.expect equals the file's case expect", m["decision"]["expect"] == c["expect"])
+        listed = json.loads(raw)["listing"]["keys"][0]["publicKey"]
+        check("manifest public key equals the file's listing key", m["public_key_base64"] == listed)
+    else:
+        not_assessed.append("request, signature_base, decision and key were not compared to the published vector file (no --vectors)")
+        print("[NOT ASSESSED] request, signature_base, decision and key vs the vector file (run with --vectors)")
 
     print()
-    print("ALL CHECKS PASS" if ok else "SOME CHECKS FAILED")
-    sys.exit(0 if ok else 1)
+    if not ok:
+        print("SOME CHECKS FAILED")
+        sys.exit(1)
+    if not_assessed:
+        print("CHECKS THAT RAN PASSED, BUT NOT EVERYTHING WAS ASSESSED:")
+        for n in not_assessed:
+            print("  - " + n)
+        sys.exit(2)
+    print("ALL CHECKS PASS")
+    sys.exit(0)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (KeyError, ValueError, TypeError, IndexError) as e:
+        print(f"[FAIL] manifest or vector file is malformed: {type(e).__name__}: {e}")
+        print("SOME CHECKS FAILED")
+        sys.exit(1)
