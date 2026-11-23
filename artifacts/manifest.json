@@ -1,0 +1,68 @@
+{
+  "action_ref": "538681901097ba675dcb8d79861cf68ac2d7d939f6b58545d53983fce2b5482f",
+  "decision": {
+    "case": "accepted: key named by directory ID, with Signature-Agent and an application header",
+    "expect": {
+      "ok": true
+    },
+    "their_verifier_full_run": "94 of 94 passed: 18 accepted, 52 refused, 24 could not check"
+  },
+  "envelope": {
+    "action_ref": "538681901097ba675dcb8d79861cf68ac2d7d939f6b58545d53983fce2b5482f",
+    "decision_digest": "eaeb22c7b9484892a926e9490c348eaa64f6ce84328c5bb86ba7cb6887ca2c78",
+    "request_digest": "69951cbb74dd32f0c709aac381b31bdd1594d54b7ea13ccf62d4e8a55f481689",
+    "signature_base_digest": "59ec57167873b43b3d247383ce4af8b014ea6205c0efd451225c3d7852484a07"
+  },
+  "fixture_id": "visa-cli-tap-signed-request-worked-example",
+  "jcs_payload": "{\"action_type\":\"http.signed_request.POST\",\"agent_id\":\"vector-agent\",\"scope\":\"tap-http-request-v1:https://market.example/tasks/42/claim\",\"timestamp\":\"2026-11-06T21:20:00.000Z\"}",
+  "preimage": {
+    "action_type": "http.signed_request.POST",
+    "agent_id": "vector-agent",
+    "scope": "tap-http-request-v1:https://market.example/tasks/42/claim",
+    "timestamp": "2026-11-06T21:20:00.000Z"
+  },
+  "public_key_base64": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUNvd0JRWURLMlZ3QXlFQTExcVlBWUt4Q3JmVlMvN1R5V1FIT2c3aGN2UGFwaU1scndJYWFQY0hVUm89Ci0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=",
+  "request": {
+    "body": "{\"task\":42}",
+    "headers": [
+      [
+        "accept",
+        "*/*"
+      ],
+      [
+        "content-digest",
+        "sha-256=:lVH0Kpm71IxwuPvOjdCShjrzCouWTVbs3GY4TjGfhnk=:"
+      ],
+      [
+        "content-type",
+        "application/json"
+      ],
+      [
+        "signature",
+        "sig2=:8jPHqb359vqMBCYSR+42L0+ctBlXy0DYEjLXBbVRJniQVcnTg4puQWyJTrO7AmAEEVdI4ScJDi0LewvhyN2GAA==:"
+      ],
+      [
+        "signature-agent",
+        "\"https://sbx.agenticdirectory.visa.com\""
+      ],
+      [
+        "signature-input",
+        "sig2=(\"@method\" \"@scheme\" \"@authority\" \"@path\" \"@query\" \"content-digest\" \"accept\" \"content-type\" \"signature-agent\" \"x-idempotency-key\");created=1794000000;expires=1794000060;keyid=\"11111111-2222-4333-8444-555555555555\";alg=\"Ed25519\";nonce=\"BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=\";tag=\"agent-browser-auth\""
+      ],
+      [
+        "x-idempotency-key",
+        "abc"
+      ]
+    ],
+    "method": "POST",
+    "url": "https://market.example/tasks/42/claim?ref=a"
+  },
+  "signature_base": "\"@method\": POST\n\"@scheme\": https\n\"@authority\": market.example\n\"@path\": /tasks/42/claim\n\"@query\": ?ref=a\n\"content-digest\": sha-256=:lVH0Kpm71IxwuPvOjdCShjrzCouWTVbs3GY4TjGfhnk=:\n\"accept\": */*\n\"content-type\": application/json\n\"signature-agent\": \"https://sbx.agenticdirectory.visa.com\"\n\"x-idempotency-key\": abc\n\"@signature-params\": (\"@method\" \"@scheme\" \"@authority\" \"@path\" \"@query\" \"content-digest\" \"accept\" \"content-type\" \"signature-agent\" \"x-idempotency-key\");created=1794000000;expires=1794000060;keyid=\"11111111-2222-4333-8444-555555555555\";alg=\"Ed25519\";nonce=\"BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=\";tag=\"agent-browser-auth\"",
+  "source_vectors": {
+    "case": "accepted: key named by directory ID, with Signature-Agent and an application header",
+    "profile": "tap-http-request-v1",
+    "sha256": "ac7f70dc2a9f0a88f3c3c3f190f793580dff5b3a95f4bc7fff808f0ae48a006c",
+    "url": "https://app.visacli.sh/conformance/tap-http-request-v1.json"
+  },
+  "spec": "action-ref-v1 (argentum-core, docs/spec/action-ref.md)"
+}
